@@ -34,9 +34,8 @@ func InsertUser(userName, password string) error {
 	}
 	defer session.Close()
 	query := "INSERT INTO users (lastname, age, city, email, firstname) VALUES ('Jones', 35, 'Austin', 'bob@example.com', 'Bob')"
-	if err := session.Query(query).Exec(); err != nil {
-		return err
-	}
+	err = session.Query(query).Exec()
+	return err
 }
 
 func QueryUser(userName, password string) error {
