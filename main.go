@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/deathcore666/battleShips/controller"
+	"github.com/deathcore666/battleShips/service"
 
 	"github.com/gorilla/mux"
 )
