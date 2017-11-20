@@ -2,7 +2,6 @@ package dbclient
 
 import (
 	"errors"
-	"log"
 
 	"github.com/gocql/gocql"
 )
@@ -11,16 +10,6 @@ var (
 	address  string = "127.0.0.1"
 	keyspace string = "bships"
 )
-
-type ICassClient interface {
-	CreateSession(address, keyspace string) (*gocql.Session, error)
-	QueryUser(userName, password string) error
-	InsertUser(userName, password string) error
-}
-
-type CassClient struct {
-	
-}
 
 func CreateSession(address, keyspace string) (*gocql.Session, error) {
 	cluster := gocql.NewCluster(address)
@@ -35,7 +24,6 @@ func CreateSession(address, keyspace string) (*gocql.Session, error) {
 func InsertUser(userName, password string) error {
 	session, err := CreateSession(address, keyspace)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 	defer session.Close()

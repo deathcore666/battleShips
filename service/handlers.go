@@ -8,19 +8,17 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
-var Dbclient dbclient.ICassClient
-
 var cookieHandler = securecookie.New(
 	securecookie.GenerateRandomKey(64),
 	securecookie.GenerateRandomKey(32),
 )
 
 func IndexpageHandler(w http.ResponseWriter, r *http.Request) {
-	if GetCookieField("name", r) != "" {
+	if GetCookieField("name", "session", r) != "" {
 		http.Redirect(w, r, "/start", 302)
 	}
 
-	errStr := GetCookieField("error", r)
+	errStr := GetCookieField("error", "errorCookie", r)
 	errMap := map[string]string{
 		"loginError": errStr,
 	}
@@ -29,7 +27,7 @@ func IndexpageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartpageHandler(w http.ResponseWriter, r *http.Request) {
-	userName := GetCookieField("name", r)
+	userName := GetCookieField("name", "session", r)
 	if userName != "" {
 		userMap := map[string]string{
 			"userName": userName,
@@ -48,42 +46,55 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if name != "" && pass != "" {
 		err := dbclient.QueryUser(name, pass)
 		if err != nil {
-			setSession("error", err.Error(), w)
+			setSession("error", err.Error(), "errorCookie", w)
 			http.Redirect(w, r, redirectTarget, 302)
 			return
 		}
-		clearSession(w)
-		setSession("name", name, w)
+		clearSession("errorCookie", w)
+		setSession("name", name, "session", w)
 		redirectTarget = "/start"
 	}
 	http.Redirect(w, r, redirectTarget, 302)
 }
 
+func RegisterpageHandler(w http.ResponseWriter, r *http.Request) {
+	errStr := GetCookieField("registerError", "errorCookie", r)
+	errMap := map[string]string{
+		"registerError": errStr,
+	}
+	t, _ := template.ParseFiles("views/register.html")
+	t.Execute(w, errMap)
+}
+
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	pass := r.FormValue("password")
-	redirectTarget := "/register"
+	redirectTarget := "/"
 	if name != "" && pass != "" {
-		err := Dbclient.InsertUser(name, pass)
+		err := dbclient.InsertUser(name, pass)
 		if err != nil {
-			redirectTarget = "/"
+			setSession("registerError", err.Error(), "errorCookie", w)
+			redirectTarget = "/registerp"
+			http.Redirect(w, r, redirectTarget, 302)
+			return
 		}
 	}
+	clearSession("errorCookie", w)
 	http.Redirect(w, r, redirectTarget, 302)
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	clearSession(w)
+	clearSession("session", w)
 	http.Redirect(w, r, "/", 302)
 }
 
-func setSession(field, fieldValue string, w http.ResponseWriter) {
+func setSession(field, fieldValue, cookieType string, w http.ResponseWriter) {
 	value := map[string]string{
 		field: fieldValue,
 	}
-	if encoded, err := cookieHandler.Encode("session", value); err == nil {
+	if encoded, err := cookieHandler.Encode(cookieType, value); err == nil {
 		cookie := &http.Cookie{
-			Name:  "session",
+			Name:  cookieType,
 			Value: encoded,
 			Path:  "/",
 		}
@@ -91,19 +102,19 @@ func setSession(field, fieldValue string, w http.ResponseWriter) {
 	}
 }
 
-func GetCookieField(field string, r *http.Request) (fieldValue string) {
-	if cookie, err := r.Cookie("session"); err == nil {
+func GetCookieField(field, cookieType string, r *http.Request) (fieldValue string) {
+	if cookie, err := r.Cookie(cookieType); err == nil {
 		cookieValue := make(map[string]string)
-		if err = cookieHandler.Decode("session", cookie.Value, &cookieValue); err == nil {
+		if err = cookieHandler.Decode(cookieType, cookie.Value, &cookieValue); err == nil {
 			fieldValue = cookieValue[field]
 		}
 	}
 	return fieldValue
 }
 
-func clearSession(w http.ResponseWriter) {
+func clearSession(cookieType string, w http.ResponseWriter) {
 	cookie := &http.Cookie{
-		Name:   "session",
+		Name:   cookieType,
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1,

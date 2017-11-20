@@ -37,6 +37,12 @@ var routes = Routes{
 		StartpageHandler,
 	},
 	Route{
+		"RegisterPage",
+		"GET",
+		"/registerp",
+		RegisterpageHandler,
+	},
+	Route{
 		"Register",
 		"POST",
 		"/register",
