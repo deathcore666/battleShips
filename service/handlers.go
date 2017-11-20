@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/deathcore666/battleShips/dbclient"
+	"github.com/deathcore666/battleShips/model"
 	"github.com/gorilla/securecookie"
 )
 
@@ -18,7 +19,7 @@ func IndexpageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/start", 302)
 	}
 
-	errStr := GetCookieField("error", "errorCookie", r)
+	errStr := GetCookieField("loginError", "errorCookie", r)
 	errMap := map[string]string{
 		"loginError": errStr,
 	}
@@ -40,18 +41,19 @@ func StartpageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	name := r.FormValue("name")
-	pass := r.FormValue("password")
+	var user model.UserAccount
+	user.UserName = r.FormValue("name")
+	user.Password = r.FormValue("password")
 	redirectTarget := "/"
-	if name != "" && pass != "" {
-		err := dbclient.QueryUser(name, pass)
+	if user.UserName != "" && user.Password != "" {
+		err := dbclient.QueryUser(user)
 		if err != nil {
-			setSession("error", err.Error(), "errorCookie", w)
+			setSession("loginError", err.Error(), "errorCookie", w)
 			http.Redirect(w, r, redirectTarget, 302)
 			return
 		}
 		clearSession("errorCookie", w)
-		setSession("name", name, "session", w)
+		setSession("name", user.UserName, "session", w)
 		redirectTarget = "/start"
 	}
 	http.Redirect(w, r, redirectTarget, 302)
@@ -67,11 +69,12 @@ func RegisterpageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	name := r.FormValue("name")
-	pass := r.FormValue("password")
+	var user model.UserAccount
+	user.UserName = r.FormValue("name")
+	user.Password = r.FormValue("password")
 	redirectTarget := "/"
-	if name != "" && pass != "" {
-		err := dbclient.InsertUser(name, pass)
+	if user.UserName != "" && user.Password != "" {
+		err := dbclient.InsertUser(user)
 		if err != nil {
 			setSession("registerError", err.Error(), "errorCookie", w)
 			redirectTarget = "/registerp"
