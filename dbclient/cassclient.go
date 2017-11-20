@@ -2,6 +2,7 @@ package dbclient
 
 import (
 	"errors"
+	"log"
 
 	"github.com/gocql/gocql"
 )
@@ -17,6 +18,10 @@ type ICassClient interface {
 	InsertUser(userName, password string) error
 }
 
+type CassClient struct {
+	
+}
+
 func CreateSession(address, keyspace string) (*gocql.Session, error) {
 	cluster := gocql.NewCluster(address)
 	cluster.Keyspace = keyspace
@@ -30,12 +35,19 @@ func CreateSession(address, keyspace string) (*gocql.Session, error) {
 func InsertUser(userName, password string) error {
 	session, err := CreateSession(address, keyspace)
 	if err != nil {
+		log.Fatal(err)
 		return err
 	}
 	defer session.Close()
-	query := "INSERT INTO users (lastname, age, city, email, firstname) VALUES ('Jones', 35, 'Austin', 'bob@example.com', 'Bob')"
-	err = session.Query(query).Exec()
-	return err
+
+	checkQuery := "SELECT userName FROM users WHERE userName = ?"
+	iter := session.Query(checkQuery, userName).Iter()
+	if iter.NumRows() == 0 {
+		query := "INSERT INTO users (userName, password) VALUES (?, ?)"
+		err = session.Query(query, userName, password).Exec()
+		return err
+	}
+	return errors.New("username already exists")
 }
 
 func QueryUser(userName, password string) error {
@@ -46,7 +58,7 @@ func QueryUser(userName, password string) error {
 	}
 	defer session.Close()
 
-	iter := session.Query("SELECT password FROM users WHERE userName = (?)", userName).Iter()
+	iter := session.Query("SELECT password FROM users WHERE userName = ?", userName).Iter()
 	if iter.NumRows() == 0 {
 		err := errors.New("user does not exist")
 		return err
