@@ -19,7 +19,7 @@ func CreateGame(hostPlayer model.UserAccount) error {
 	defer session.Close()
 
 	iter := session.Query("SELECT * FROM games").Iter()
-	var currentID = iter.NumRows() + 10000
+	var currentID = iter.NumRows() + 100000
 	hostGame := Game{ID: currentID, P1: hostPlayer.UserName, P2: "", IsDone: false}
 
 	query := "INSERT INTO games (id, p1, p2, isdone) VALUES (?, ?, ?, ?)"
