@@ -29,11 +29,19 @@ func InsertUser(user model.UserAccount) error {
 	}
 	defer session.Close()
 
-	checkQuery := "SELECT userName FROM users WHERE userName = ?"
+	checkQuery := "SELECT userName FROM users WHERE userName = ? ALLOW FILTERING"
+	err = session.Query(checkQuery, user.UserName).Exec()
+	if err != nil {
+		return err
+	}
 	iter := session.Query(checkQuery, user.UserName).Iter()
+
 	if iter.NumRows() == 0 {
-		query := "INSERT INTO users (userName, password) VALUES (?, ?)"
-		err = session.Query(query, user.UserName, user.Password).Exec()
+		checkId := "SELECT * FROM users"
+		iterid := session.Query(checkId, user.UserName).Iter()
+		currentId := iterid.NumRows() + 10000
+		query := "INSERT INTO users (id, userName, password) VALUES (?, ?, ?)"
+		err = session.Query(query, currentId, user.UserName, user.Password).Exec()
 		return err
 	}
 	return errors.New("101-username-already-exists")
@@ -47,7 +55,7 @@ func QueryUser(user model.UserAccount) error {
 	}
 	defer session.Close()
 
-	iter := session.Query("SELECT password FROM users WHERE userName = ?", user.UserName).Iter()
+	iter := session.Query("SELECT password FROM users WHERE userName = ? ALLOW FILTERING", user.UserName).Iter()
 	if iter.NumRows() == 0 {
 		err := errors.New("001-wrong-username")
 		return err
