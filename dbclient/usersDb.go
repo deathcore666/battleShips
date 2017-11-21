@@ -2,6 +2,7 @@ package dbclient
 
 import (
 	"errors"
+	"log"
 
 	"github.com/deathcore666/battleShips/model"
 	"github.com/gocql/gocql"
@@ -23,6 +24,7 @@ func CreateSession(address, keyspace string) (*gocql.Session, error) {
 }
 
 func InsertUser(user model.UserAccount) error {
+	log.Println("attempting to create a user: ", user.UserName, user.Password)
 	session, err := CreateSession(address, keyspace)
 	if err != nil {
 		return err

@@ -9,9 +9,7 @@ type IGame interface {
 	JoinGame(guestPlayer model.UserAccount) error
 }
 
-type Game model.Game
-
-func CreateGame(hostPlayer model.UserAccount) error {
+func CreateGame(hostPlayer model.UserAccount, ttle string) error {
 	session, err := CreateSession(address, keyspace)
 	if err != nil {
 		return err
@@ -20,20 +18,28 @@ func CreateGame(hostPlayer model.UserAccount) error {
 
 	iter := session.Query("SELECT * FROM games").Iter()
 	var currentID = iter.NumRows() + 100000
-	hostGame := Game{ID: currentID, P1: hostPlayer.UserName, P2: "", IsDone: false}
+	hostGame := model.Game{
+		ID:        currentID,
+		P1:        hostPlayer.ID,
+		P2:        0,
+		IsDone:    false,
+		GameTitle: ttle,
+	}
 
-	query := "INSERT INTO games (id, p1, p2, isdone) VALUES (?, ?, ?, ?)"
+	query := "INSERT INTO games (id, p1, p2, isdone, title) VALUES (?, ?, ?, ?, ?)"
 	err = session.Query(query, hostGame.ID, hostGame.P1, hostGame.P2,
-		hostGame.IsDone).Exec()
+		hostGame.IsDone, hostGame.GameTitle).Exec()
 	return err
 }
 
-func JoinGame(guestPlayer model.UserAccount) error {
+func JoinGame(guestPlayer model.UserAccount, gameID int) error {
 	session, err := CreateSession(address, keyspace)
 	if err != nil {
 		return err
 	}
 	defer session.Close()
 
+	query := "UPDATE games SET p2 = ?, isdone = ? WHERE id = ?"
+	err = session.Query(query, guestPlayer.ID, true, gameID).Exec()
 	return err
 }

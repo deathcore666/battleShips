@@ -1,8 +1,10 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 
 	"github.com/deathcore666/battleShips/dbclient"
@@ -49,11 +51,20 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if user.UserName != "" && user.Password != "" {
 		err := dbclient.QueryUser(user)
 		if err != nil {
-			fmt.Fprintf(w, err.Error())
+			b, err := json.Marshal(err.Error())
+			if err != nil {
+				log.Println(err)
+			}
+			fmt.Fprintf(w, string(b))
 			return
 		}
 		setSession("name", user.UserName, "session", w)
-		fmt.Fprintf(w, "000-success")
+		resp := "000-success"
+		b, err := json.Marshal(resp)
+		if err != nil {
+			log.Println(err)
+		}
+		fmt.Fprintf(w, string(b))
 	}
 	http.Redirect(w, r, redirectTarget, 302)
 }
@@ -71,15 +82,30 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var user model.UserAccount
 	user.UserName = r.FormValue("name")
 	user.Password = r.FormValue("password")
+	log.Println(r.Body)
 	//redirectTarget := "/"
 	if user.UserName != "" && user.Password != "" {
 		err := dbclient.InsertUser(user)
 		if err != nil {
-			fmt.Fprintf(w, err.Error())
+			b, err := json.Marshal(err.Error())
+			if err != nil {
+				log.Println(err)
+			}
+			fmt.Fprintf(w, string(b))
 			return
 		}
 	}
-	fmt.Fprintf(w, "100-registration-success")
+	if user.UserName == "" && user.Password == "" {
+		fmt.Fprintln(w, "empty fields")
+		fmt.Fprintln(w, r.Body)
+		return
+	}
+	resp := "100-success"
+	b, err := json.Marshal(resp)
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Fprintf(w, string(b))
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
