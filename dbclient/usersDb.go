@@ -38,7 +38,7 @@ func InsertUser(user model.UserAccount) error {
 		err = session.Query(query, currentID, user.UserName, user.Password).Exec()
 		return err
 	}
-	return errors.New("101")
+	return errors.New("101-username-already-exists")
 }
 
 func QueryUser(user model.UserAccount) error {
@@ -51,7 +51,7 @@ func QueryUser(user model.UserAccount) error {
 
 	iter := session.Query("SELECT password FROM users WHERE userName = ?", user.UserName).Iter()
 	if iter.NumRows() == 0 {
-		err := errors.New("001")
+		err := errors.New("001-wrong-username")
 		return err
 	}
 
@@ -60,6 +60,6 @@ func QueryUser(user model.UserAccount) error {
 			return nil
 		}
 	}
-	err = errors.New("002")
+	err = errors.New("002-wrong-password")
 	return err
 }
