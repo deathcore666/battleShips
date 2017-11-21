@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 
@@ -48,13 +49,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if user.UserName != "" && user.Password != "" {
 		err := dbclient.QueryUser(user)
 		if err != nil {
-			setSession("loginError", err.Error(), "errorCookie", w)
-			http.Redirect(w, r, redirectTarget, 302)
+			fmt.Fprintf(w, err.Error())
 			return
 		}
-		clearSession("errorCookie", w)
 		setSession("name", user.UserName, "session", w)
-		redirectTarget = "/start"
+		fmt.Fprintf(w, "000")
 	}
 	http.Redirect(w, r, redirectTarget, 302)
 }
@@ -72,18 +71,15 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var user model.UserAccount
 	user.UserName = r.FormValue("name")
 	user.Password = r.FormValue("password")
-	redirectTarget := "/"
+	//redirectTarget := "/"
 	if user.UserName != "" && user.Password != "" {
 		err := dbclient.InsertUser(user)
 		if err != nil {
-			setSession("registerError", err.Error(), "errorCookie", w)
-			redirectTarget = "/registerp"
-			http.Redirect(w, r, redirectTarget, 302)
+			fmt.Fprintf(w, err.Error())
 			return
 		}
 	}
-	clearSession("errorCookie", w)
-	http.Redirect(w, r, redirectTarget, 302)
+	fmt.Fprintf(w, "100")
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {

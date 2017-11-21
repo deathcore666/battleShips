@@ -32,11 +32,17 @@ func InsertUser(user model.UserAccount) error {
 	checkQuery := "SELECT userName FROM users WHERE userName = ?"
 	iter := session.Query(checkQuery, user.UserName).Iter()
 	if iter.NumRows() == 0 {
-		query := "INSERT INTO users (userName, password) VALUES (?, ?)"
-		err = session.Query(query, user.UserName, user.Password).Exec()
+		iterid := session.Query("SELECT * FROM users").Iter()
+		var currentID = iterid.NumRows() + 10000
+		query := "INSERT INTO users (id, userName, password) VALUES (?, ?, ?)"
+		err = session.Query(query, currentID, user.UserName, user.Password).Exec()
 		return err
 	}
+<<<<<<< HEAD
 	return errors.New("101")
+=======
+	return errors.New("101-username-already-exists")
+>>>>>>> games
 }
 
 func QueryUser(user model.UserAccount) error {
@@ -49,7 +55,11 @@ func QueryUser(user model.UserAccount) error {
 
 	iter := session.Query("SELECT password FROM users WHERE userName = ?", user.UserName).Iter()
 	if iter.NumRows() == 0 {
+<<<<<<< HEAD
 		err := errors.New("001")
+=======
+		err := errors.New("001-wrong-username")
+>>>>>>> games
 		return err
 	}
 
@@ -58,6 +68,10 @@ func QueryUser(user model.UserAccount) error {
 			return nil
 		}
 	}
+<<<<<<< HEAD
 	err = errors.New("002")
+=======
+	err = errors.New("002-wrong-password")
+>>>>>>> games
 	return err
 }
