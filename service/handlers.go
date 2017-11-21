@@ -53,7 +53,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		setSession("name", user.UserName, "session", w)
-		fmt.Fprintf(w, "000")
+		fmt.Fprintf(w, "000-success")
 	}
 	http.Redirect(w, r, redirectTarget, 302)
 }
@@ -79,7 +79,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	fmt.Fprintf(w, "100")
+	fmt.Fprintf(w, "100-registration-success")
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
