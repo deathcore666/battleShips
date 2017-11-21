@@ -9,14 +9,9 @@ type IGame interface {
 	JoinGame(guestPlayer model.UserAccount) error
 }
 
-type Game struct {
-	ID     int
-	P1     model.UserAccount
-	P2     model.UserAccount
-	IsDone bool
-}
+type Game model.Game
 
-func (hostGame Game) CreateGame(hostPlayer model.UserAccount) error {
+func CreateGame(hostPlayer model.UserAccount) error {
 	session, err := CreateSession(address, keyspace)
 	if err != nil {
 		return err
@@ -25,7 +20,7 @@ func (hostGame Game) CreateGame(hostPlayer model.UserAccount) error {
 
 	iter := session.Query("SELECT * FROM games").Iter()
 	var currentID = iter.NumRows() + 10000
-	hostGame = Game{ID: currentID, P1: hostPlayer, P2: model.UserAccount{}, IsDone: false}
+	hostGame := Game{ID: currentID, P1: hostPlayer.UserName, P2: "", IsDone: false}
 
 	query := "INSERT INTO games (id, p1, p2, isdone) VALUES (?, ?, ?, ?)"
 	err = session.Query(query, hostGame.ID, hostGame.P1, hostGame.P2,
@@ -33,14 +28,12 @@ func (hostGame Game) CreateGame(hostPlayer model.UserAccount) error {
 	return err
 }
 
-func (hostGame Game) JoinGame(guestPlayer model.UserAccount) error {
+func JoinGame(guestPlayer model.UserAccount) error {
 	session, err := CreateSession(address, keyspace)
 	if err != nil {
 		return err
 	}
 	defer session.Close()
 
-	query := "INSERT INTO games (id, p1, p2, isdone) VALUES (?, ?, ?, ?)"
-	err = session.Query(query, hostGame.ID, hostGame.P1.UserName, guestPlayer.UserName, true).Exec()
 	return err
 }

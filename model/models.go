@@ -2,8 +2,8 @@ package model
 
 type Game struct {
 	ID     int
-	P1     UserAccount
-	P2     UserAccount
+	P1     string
+	P2     string
 	IsDone bool
 }
 

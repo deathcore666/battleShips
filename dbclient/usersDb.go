@@ -32,8 +32,10 @@ func InsertUser(user model.UserAccount) error {
 	checkQuery := "SELECT userName FROM users WHERE userName = ?"
 	iter := session.Query(checkQuery, user.UserName).Iter()
 	if iter.NumRows() == 0 {
-		query := "INSERT INTO users (userName, password) VALUES (?, ?)"
-		err = session.Query(query, user.UserName, user.Password).Exec()
+		iterid := session.Query("SELECT * FROM users").Iter()
+		var currentID = iterid.NumRows() + 10000
+		query := "INSERT INTO users (id, userName, password) VALUES (?, ?, ?)"
+		err = session.Query(query, currentID, user.UserName, user.Password).Exec()
 		return err
 	}
 	return errors.New("101")
