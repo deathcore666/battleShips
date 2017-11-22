@@ -8,8 +8,8 @@ import (
 
 type IGame interface {
 	GetGamesJSON() ([]byte, error)
-	CreateGame(hostPlayer model.UserAccount) error
-	JoinGame(guestPlayer model.UserAccount) error
+	CreateGame(hostPlayer int) error
+	JoinGame(guestPlayer int) error
 }
 
 type GamesListJSON struct {
@@ -23,14 +23,15 @@ func GetGamesJSON() ([]byte, error) {
 	}
 	defer session.Close()
 
-	var p1, id int
+	var p1, p2, id int
 	var title string
 
-	iter := session.Query("SELECT title, p1, id FROM games WHERE isdone = false ALLOW FILTERING").Iter()
+	iter := session.Query("SELECT title, p1, p2, id FROM games WHERE isdone = false ALLOW FILTERING").Iter()
 
-	gamesList := make([]model.Game, iter.NumRows())
-	for iter.Scan(&title, &p1, &id) {
-		gamesList = append(gamesList, model.Game{ID: id, P1: p1, GameTitle: title})
+	var gamesList []model.Game
+
+	for iter.Scan(&title, &p1, &p2, &id) {
+		gamesList = append(gamesList, model.Game{ID: id, P1: p1, P2: p2, GameTitle: title})
 	}
 
 	res, err := json.Marshal(&GamesListJSON{Games: gamesList})
@@ -40,7 +41,7 @@ func GetGamesJSON() ([]byte, error) {
 	return res, nil
 }
 
-func CreateGame(hostPlayer model.UserAccount, ttle string) error {
+func CreateGame(hostPlayer int, title string) error {
 	session, err := CreateSession(address, keyspace)
 	if err != nil {
 		return err
@@ -51,10 +52,10 @@ func CreateGame(hostPlayer model.UserAccount, ttle string) error {
 	var currentID = iter.NumRows() + 100000
 	hostGame := model.Game{
 		ID:        currentID,
-		P1:        hostPlayer.ID,
+		P1:        hostPlayer,
 		P2:        0,
 		IsDone:    false,
-		GameTitle: ttle,
+		GameTitle: title,
 	}
 
 	query := "INSERT INTO games (id, p1, p2, isdone, title) VALUES (?, ?, ?, ?, ?)"
@@ -63,7 +64,7 @@ func CreateGame(hostPlayer model.UserAccount, ttle string) error {
 	return err
 }
 
-func JoinGame(guestPlayer model.UserAccount, gameID int) error {
+func JoinGame(guestPlayer int, gameID int) error {
 	session, err := CreateSession(address, keyspace)
 	if err != nil {
 		return err
@@ -71,6 +72,6 @@ func JoinGame(guestPlayer model.UserAccount, gameID int) error {
 	defer session.Close()
 
 	query := "UPDATE games SET p2 = ?, isdone = ? WHERE id = ?"
-	err = session.Query(query, guestPlayer.ID, true, gameID).Exec()
+	err = session.Query(query, guestPlayer, true, gameID).Exec()
 	return err
 }

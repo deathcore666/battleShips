@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/deathcore666/battleShips/dbclient"
 	"github.com/deathcore666/battleShips/model"
@@ -16,6 +17,82 @@ var cookieHandler = securecookie.New(
 	securecookie.GenerateRandomKey(64),
 	securecookie.GenerateRandomKey(32),
 )
+
+func GetGamesHandler(w http.ResponseWriter, r *http.Request) {
+	response, err := dbclient.GetGamesJSON()
+	if err != nil {
+		b, err := json.Marshal(err.Error())
+		if err != nil {
+			log.Println(err)
+		}
+		fmt.Fprintf(w, string(b))
+	}
+	fmt.Fprint(w, string(response))
+}
+
+func JoinGameHandler(w http.ResponseWriter, r *http.Request) {
+	gameID := r.FormValue("gameid")
+	gameIDint, _ := strconv.Atoi(gameID)
+
+	username := GetCookieField("name", "session", r)
+	userID, err := dbclient.GetUserID(username)
+	log.Println(gameID, username, userID)
+	if err != nil {
+		b, err := json.Marshal(err.Error())
+		if err != nil {
+			log.Println(err)
+		}
+		fmt.Fprintf(w, string(b))
+		return
+	}
+
+	err = dbclient.JoinGame(userID, gameIDint)
+	if err != nil {
+		b, err := json.Marshal(err.Error())
+		if err != nil {
+			log.Println(err)
+		}
+		fmt.Fprintf(w, string(b))
+		return
+	}
+
+	b, err := json.Marshal("joined successfuly")
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Fprintf(w, string(b))
+}
+
+func CreateGameHandler(w http.ResponseWriter, r *http.Request) {
+	title := r.FormValue("title")
+
+	username := GetCookieField("name", "session", r)
+	userID, err := dbclient.GetUserID(username)
+	log.Println(title, username, userID)
+	if err != nil {
+		b, err := json.Marshal(err.Error())
+		if err != nil {
+			log.Println(err)
+		}
+		fmt.Fprintf(w, string(b))
+		return
+	}
+	err = dbclient.CreateGame(userID, title)
+	if err != nil {
+		b, err := json.Marshal(err.Error())
+		if err != nil {
+			log.Println(err)
+		}
+		fmt.Fprintf(w, string(b))
+		return
+	}
+	b, err := json.Marshal("game created")
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Fprintf(w, string(b))
+	return
+}
 
 func IndexpageHandler(w http.ResponseWriter, r *http.Request) {
 	if GetCookieField("name", "session", r) != "" {
@@ -67,6 +144,23 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, string(b))
 	}
 	http.Redirect(w, r, redirectTarget, 302)
+}
+
+func testHandler(w http.ResponseWriter, r *http.Request) {
+	userName := GetCookieField("name", "session", r)
+	setSession("gameid", "123123", "gamesession", w)
+	gameID := GetCookieField("gameid", "gamesession", r)
+	log.Println(userName)
+	b, err := json.Marshal(userName)
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Fprintf(w, string(b))
+	c, err := json.Marshal(gameID)
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Fprintf(w, string(c))
 }
 
 func RegisterpageHandler(w http.ResponseWriter, r *http.Request) {

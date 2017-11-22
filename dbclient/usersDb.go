@@ -23,6 +23,23 @@ func CreateSession(address, keyspace string) (*gocql.Session, error) {
 	return session, nil
 }
 
+func GetUserID(username string) (int, error) {
+	session, err := CreateSession(address, keyspace)
+	if err != nil {
+		return 0, err
+	}
+	defer session.Close()
+
+	query := "SELECT id FROM users WHERE username = ? ALLOW FILTERING"
+	iter := session.Query(query, username).Iter()
+
+	var id int
+	if !iter.Scan(&id) {
+		return 0, errors.New("iteration error cassandra")
+	}
+	return id, nil
+}
+
 func InsertUser(user model.UserAccount) error {
 	log.Println("attempting to create a user: ", user.UserName, user.Password)
 	session, err := CreateSession(address, keyspace)

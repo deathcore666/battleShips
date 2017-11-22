@@ -48,4 +48,22 @@ var routes = Routes{
 		"/register",
 		RegisterHandler,
 	},
+	Route{
+		"Getgames",
+		"GET",
+		"/getgames",
+		GetGamesHandler,
+	},
+	Route{
+		"CreateGame",
+		"POST",
+		"/creategame",
+		CreateGameHandler,
+	},
+	Route{
+		"JoinGame",
+		"POST",
+		"/joingame",
+		JoinGameHandler,
+	},
 }
