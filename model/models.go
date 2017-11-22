@@ -1,15 +1,15 @@
 package model
 
 type Game struct {
-	ID        int
-	P1        int
-	P2        int
-	IsDone    bool
-	GameTitle string
+	ID        int    `json:"ID"`
+	P1        int    `json:"P1"`
+	P2        int    `json:"P2"`
+	IsDone    bool   `json:"isdone"`
+	GameTitle string `json:"title"`
 }
 
 type UserAccount struct {
-	ID       int
-	UserName string
-	Password string
+	ID       int    `json:"ID"`
+	UserName string `json:"username"`
+	Password string `json:"password"`
 }

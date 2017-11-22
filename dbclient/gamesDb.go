@@ -1,12 +1,43 @@
 package dbclient
 
 import (
+	"encoding/json"
+
 	"github.com/deathcore666/battleShips/model"
 )
 
 type IGame interface {
+	GetGamesJSON() ([]byte, error)
 	CreateGame(hostPlayer model.UserAccount) error
 	JoinGame(guestPlayer model.UserAccount) error
+}
+
+type GamesListJSON struct {
+	Games []model.Game `json:"games"`
+}
+
+func GetGamesJSON() ([]byte, error) {
+	session, err := CreateSession(address, keyspace)
+	if err != nil {
+		return nil, err
+	}
+	defer session.Close()
+
+	var p1, id int
+	var title string
+
+	iter := session.Query("SELECT title, p1, id FROM games WHERE isdone = false ALLOW FILTERING").Iter()
+
+	gamesList := make([]model.Game, iter.NumRows())
+	for iter.Scan(&title, &p1, &id) {
+		gamesList = append(gamesList, model.Game{ID: id, P1: p1, GameTitle: title})
+	}
+
+	res, err := json.Marshal(&GamesListJSON{Games: gamesList})
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func CreateGame(hostPlayer model.UserAccount, ttle string) error {
