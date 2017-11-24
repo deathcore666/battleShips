@@ -41,10 +41,10 @@ func GetGamesJSON() ([]byte, error) {
 	return res, nil
 }
 
-func CreateGame(hostPlayer int, title string) error {
+func CreateGame(hostPlayer int, title string) (int, error) {
 	session, err := CreateSession(address, keyspace)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer session.Close()
 
@@ -61,7 +61,7 @@ func CreateGame(hostPlayer int, title string) error {
 	query := "INSERT INTO games (id, p1, p2, isdone, title) VALUES (?, ?, ?, ?, ?)"
 	err = session.Query(query, hostGame.ID, hostGame.P1, hostGame.P2,
 		hostGame.IsDone, hostGame.GameTitle).Exec()
-	return err
+	return currentID, err
 }
 
 func JoinGame(guestPlayer int, gameID int) error {

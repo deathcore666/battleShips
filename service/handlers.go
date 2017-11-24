@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -31,7 +32,7 @@ func GetGamesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func JoinGameHandler(w http.ResponseWriter, r *http.Request) {
-	gameID := r.FormValue("gameid")
+	gameID := r.FormValue("gameid") //get session from
 	gameIDint, _ := strconv.Atoi(gameID)
 
 	username := GetCookieField("name", "session", r)
@@ -55,11 +56,12 @@ func JoinGameHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, string(b))
 		return
 	}
-
+	log.Println(username, "joined gameID:", gameIDint)
 	b, err := json.Marshal("joined successfuly")
 	if err != nil {
 		log.Println(err)
 	}
+	setSession("gameid", gameID, "gamesession", w)
 	fmt.Fprintf(w, string(b))
 }
 
@@ -68,7 +70,7 @@ func CreateGameHandler(w http.ResponseWriter, r *http.Request) {
 
 	username := GetCookieField("name", "session", r)
 	userID, err := dbclient.GetUserID(username)
-	log.Println(title, username, userID)
+
 	if err != nil {
 		b, err := json.Marshal(err.Error())
 		if err != nil {
@@ -77,7 +79,7 @@ func CreateGameHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, string(b))
 		return
 	}
-	err = dbclient.CreateGame(userID, title)
+	gameID, err := dbclient.CreateGame(userID, title)
 	if err != nil {
 		b, err := json.Marshal(err.Error())
 		if err != nil {
@@ -86,10 +88,12 @@ func CreateGameHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, string(b))
 		return
 	}
+	log.Println(username, "created a game:", gameID)
 	b, err := json.Marshal("game created")
 	if err != nil {
 		log.Println(err)
 	}
+	setSession("gameid", string(gameID), "gamesession", w)
 	fmt.Fprintf(w, string(b))
 	return
 }
@@ -131,6 +135,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			b, err := json.Marshal(err.Error())
 			if err != nil {
 				log.Println(err)
+
 			}
 			fmt.Fprintf(w, string(b))
 			return
@@ -141,26 +146,35 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println(err)
 		}
+		log.Println("user ", user.UserName, "logged in")
 		fmt.Fprintf(w, string(b))
+		return
 	}
 	http.Redirect(w, r, redirectTarget, 302)
 }
 
 func testHandler(w http.ResponseWriter, r *http.Request) {
-	userName := GetCookieField("name", "session", r)
-	setSession("gameid", "123123", "gamesession", w)
-	gameID := GetCookieField("gameid", "gamesession", r)
-	log.Println(userName)
-	b, err := json.Marshal(userName)
+	// userName := GetCookieField("name", "session", r)
+	// gameID := GetCookieField("gameid", "gamesession", r)
+	ships, _ := ioutil.ReadAll(r.Body)
+	log.Println("original: ", ships)
+	log.Println("tostring: ", string(ships))
+	// var s map[interface{}]interface{}
+	// err := json.Unmarshal(ships, &s)
+	// if err != nil {
+	// 	log.Println("error: ", err)
+	// }
+	// log.Println("unmarshaled: ", s)
+	// fmt.Fprint(w, "body: ")
+
+	//-------------------------------------------
+	decoder := json.NewDecoder(r.Body)
+	var t interface{}
+	err := decoder.Decode(&t)
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Fprintf(w, string(b))
-	c, err := json.Marshal(gameID)
-	if err != nil {
-		log.Println(err)
-	}
-	fmt.Fprintf(w, string(c))
+	log.Println(t)
 }
 
 func RegisterpageHandler(w http.ResponseWriter, r *http.Request) {

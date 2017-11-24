@@ -66,4 +66,10 @@ var routes = Routes{
 		"/joingame",
 		JoinGameHandler,
 	},
+	Route{
+		"test",
+		"POST",
+		"/test",
+		testHandler,
+	},
 }
